@@ -1,0 +1,21 @@
+# WorkBuddy 项目数据与已发布应用卡片（本地保留，不入库）
+.workbuddy/
+*.genie
+
+# 本地版本快照、设计过程稿与效果对比稿（体积大，仅本地留存）
+backups/
+card-samples/
+style-proposals/
+card-glow-compare.html
+card-glow-compare.png
+
+# 临时验证脚本与音频构建中间目录
+_*.mjs
+_tts_tmp/
+
+# 打包产物与通用忽略
+*.zip
+*.log
+node_modules/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#17110a">
+<!-- 微信 WebView 会长期强缓存同名静态资源；每次发布递增下方 ?v= 版本号，强制拉取新代码 -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>阿瓦隆 · 单机电子裁判</title>
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTIiIGZpbGw9IiMxNzEyMGEiLz48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYzlhNTRlIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSIzMiIgeT0iNDMiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLHNlcmlmIiBmb250LXNpemU9IjMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZThjZjlhIj5BPC90ZXh0Pjwvc3ZnPg==">
+<!-- 样式按功能拆分，顺序不可调换（层叠依赖） -->
+<link rel="stylesheet" href="css/01-base.css?v=15">
+<link rel="stylesheet" href="css/02-components.css?v=15">
+<link rel="stylesheet" href="css/03-motion.css?v=15">
+<link rel="stylesheet" href="css/04-landing.css?v=15">
+<script>
+/* 首屏门面：只负责展示层显隐与两个说明弹层，不参与对局状态机。
+   放在 head 是为了在样式生效前决定是否显示首屏，避免闪屏；
+   首屏默认隐藏，脚本异常时应用照常可用（渐进增强）。
+   同一标签页进入过应用后不再重复显示，避免对局中刷新被门面挡住。 */
+(function () {
+  var KEY = 'avalon_landing_seen_v1';
+  var seen = false;
+  try { seen = !!sessionStorage.getItem(KEY); } catch (e) {}
+  if (!seen) document.documentElement.classList.add('show-landing');
+
+  /* 图鉴立绘放大：Esc 先关大图，再关说明弹层 */
+  window.avalonCloseZoom = function () {
+    var z = document.getElementById('lpZoom');
+    if (z) z.classList.remove('open');
+  };
+  window.avalonZoom = function (src, name) {
+    var z = document.getElementById('lpZoom');
+    if (!z) return;
+    var img = document.getElementById('lpZoomImg');
+    var cap = document.getElementById('lpZoomCap');
+    if (img) { img.src = src; img.alt = name; }
+    if (cap) cap.textContent = name;
+    z.classList.add('open');
+  };
+  window.avalonClosePanel = function () {
+    window.avalonCloseZoom();
+    var all = document.querySelectorAll('.lp-modal');
+    for (var i = 0; i < all.length; i++) all[i].classList.remove('open');
+  };
+  window.avalonOpenPanel = function (id) {
+    window.avalonClosePanel();
+    var el = document.getElementById(id);
+    if (el) el.classList.add('open');
+  };
+  window.enterApp = function () {
+    window.avalonClosePanel();
+    document.documentElement.classList.remove('show-landing');
+    try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
+    try { window.scrollTo(0, 0); } catch (e) {}
+  };
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var z = document.getElementById('lpZoom');
+    if (z && z.classList.contains('open')) { window.avalonCloseZoom(); return; }
+    window.avalonClosePanel();
+  });
+  /* 有未结束的对局时，主按钮改说「继续本局」：点进去会由存档恢复到原环节，不会重开 */
+  document.addEventListener('DOMContentLoaded', function () {
+    var hasGame = false;
+    try { hasGame = !!localStorage.getItem('avalon_judge_state_v2'); } catch (e) {}
+    if (!hasGame) return;
+    var labels = document.querySelectorAll('.lp-btn.primary .lp-btn-label');
+    for (var i = 0; i < labels.length; i++) labels[i].textContent = '继续本局';
+
+    /* 自检：HTML 已是新版但脚本仍来自旧缓存时，给一条可点的强制刷新入口 */
+    try {
+      if (window.APP_VERSION !== 'v15') {
+        var bar = document.createElement('div');
+        bar.setAttribute('style', 'position:fixed;left:0;right:0;top:0;z-index:99999;padding:11px 14px;background:#7a2b24;color:#fff;font-size:13px;line-height:1.7;text-align:center;box-shadow:0 4px 18px rgba(0,0,0,.5)');
+        bar.innerHTML = '⚠️ 这台设备加载的仍是旧版本缓存。点这里 <b style="text-decoration:underline;cursor:pointer" onclick="location.href=location.pathname+\'?sharecode=YEGQ2CDFFR&v=15&t=\'+Date.now()">刷新到新版 v15</b>';
+        document.body.appendChild(bar);
+      }
+    } catch (e) {}
+  });
+})();
+</script>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- ===================== 首屏门面（单屏，点「开始一局」原地进入应用） ===================== -->
+<div id="landing" aria-label="阿瓦隆 · 单机电子裁判">
+  <div class="lp-planet" aria-hidden="true"></div>
+  <div class="lp-stars" aria-hidden="true"></div>
+  <div class="lp-orbit" aria-hidden="true"></div>
+  <div class="lp-vignette" aria-hidden="true"></div>
+
+  <header class="lp-nav">
+    <div class="lp-brand"><span class="lp-brand-seal">A</span><span>AVALON</span><em>电子裁判</em></div>
+    <nav class="lp-links">
+      <button class="lp-link" onclick="avalonOpenPanel('lpRules')">玩法规则</button>
+      <button class="lp-link" onclick="avalonOpenPanel('lpRoles')">角色图鉴</button>
+      <button class="lp-link lp-nav-cta" onclick="enterApp()">进入应用 <span aria-hidden="true">↗</span></button>
+    </nav>
+  </header>
+
+  <main class="lp-main">
+    <div class="lp-copy">
+      <p class="lp-eyebrow">AVALON · THE ROUND TABLE</p>
+      <h1 class="lp-title"><span>Draw your Fate.</span><span>Trust</span><span>No One.</span></h1>
+      <p class="lp-lede">在暗流与誓言之间，找出真正值得托付的人。</p>
+      <div class="lp-actions">
+        <button class="lp-btn" onclick="avalonOpenPanel('lpRules')">玩法规则</button>
+        <button class="lp-btn" onclick="avalonOpenPanel('lpRoles')">角色图鉴</button>
+        <button class="lp-btn primary" onclick="enterApp()"><span class="lp-btn-label">开始一局</span> <span aria-hidden="true">→</span></button>
+      </div>
+    </div>
+    <div class="lp-deck" aria-hidden="true">
+      <figure class="lp-card c-left"><img src="cards/c05.jpg" alt=""><figcaption><b>MORGANA</b><small>莫甘娜</small></figcaption></figure>
+      <figure class="lp-card c-mid"><img src="cards/c01.jpg" alt=""><figcaption><b>MERLIN</b><small>梅林</small></figcaption></figure>
+      <figure class="lp-card c-right"><img src="cards/c04.jpg" alt=""><figcaption><b>ASSASSIN</b><small>刺客</small></figcaption></figure>
+    </div>
+  </main>
+
+  <div class="lp-sigil" aria-hidden="true">✦</div>
+  <footer class="lp-foot">AVALON · A QUIET GAME OF LOYALTY, DECEPTION AND THE ROUND TABLE · v15</footer>
+</div>
+
+<!-- ===================== 两个轻量说明弹层（不做长页、不额外跳转） ===================== -->
+<div class="lp-modal" id="lpRules" role="dialog" aria-label="玩法规则">
+  <div class="lp-modal-mask" onclick="avalonClosePanel()"></div>
+  <div class="lp-modal-wrap">
+    <button class="lp-modal-x" onclick="avalonClosePanel()" aria-label="关闭">×</button>
+    <section class="lp-modal-box">
+      <p class="lp-eyebrow">HOW TO PLAY</p>
+      <h2 class="lp-modal-t">玩法规则</h2>
+      <ol class="lp-rules">
+        <li>5–10 人围坐一桌，把手机平放在中央，由它替你发牌并主持整场流程。</li>
+        <li>依次传递手机，每人只看自己的身份，看完就交还，不给同伴看。</li>
+        <li>按提示「睁眼互认」：坏人相认、梅林查看坏人、派西维尔辨认梅林。</li>
+        <li>队长提名队员 → 全员举手表决 → 过半发车；连续两次被否，第三次强制发车。</li>
+        <li>队员秘密投出任务成功或失败；7–10 人局的第 4 个任务需要 2 张失败才判负。</li>
+        <li>好人先赢下 3 个任务，刺客仍可指认梅林；指中则坏人翻盘。</li>
+      </ol>
+      <button class="lp-btn primary lp-modal-cta" onclick="enterApp()"><span class="lp-btn-label">开始一局</span> <span aria-hidden="true">→</span></button>
+    </section>
+  </div>
+</div>
+
+<div class="lp-modal" id="lpRoles" role="dialog" aria-label="角色图鉴">
+  <div class="lp-modal-mask" onclick="avalonClosePanel()"></div>
+  <div class="lp-modal-wrap">
+    <button class="lp-modal-x" onclick="avalonClosePanel()" aria-label="关闭">×</button>
+    <section class="lp-modal-box">
+      <p class="lp-eyebrow">THE CAST</p>
+      <h2 class="lp-modal-t">角色图鉴</h2>
+      <p class="lp-cast-hint">八位登场角色 · 点击立绘可放大查看</p>
+      <p class="lp-group-t">忠诚方 · LOYAL</p>
+      <div class="lp-cast-grid">
+        <button type="button" class="lp-cast-card good" onclick="avalonZoom('cards/c01.jpg','梅林 · MERLIN')">
+          <span class="lp-cast-art"><img src="cards/c01.jpg" alt="梅林"></span>
+          <span class="lp-cast-info"><span class="lp-cast-name"><i></i>梅林</span><span class="lp-cast-en">MERLIN</span><span class="lp-cast-desc">知道除莫德雷德外的所有坏人，须隐藏自己。</span></span>
+        </button>
+        <button type="button" class="lp-cast-card good" onclick="avalonZoom('cards/c02.jpg','派西维尔 · PERCIVAL')">
+          <span class="lp-cast-art"><img src="cards/c02.jpg" alt="派西维尔"></span>
+          <span class="lp-cast-info"><span class="lp-cast-name"><i></i>派西维尔</span><span class="lp-cast-en">PERCIVAL</span><span class="lp-cast-desc">看到梅林与莫甘娜，但分不清谁是真梅林。</span></span>
+        </button>
+        <button type="button" class="lp-cast-card good" onclick="avalonZoom('cards/c03.jpg','忠臣 · LOYALIST')">
+          <span class="lp-cast-art"><img src="cards/c03.jpg" alt="忠臣"></span>
+          <span class="lp-cast-info"><span class="lp-cast-name"><i></i>忠臣</span><span class="lp-cast-en">LOYALIST</span><span class="lp-cast-desc">只知道自己是好人，相信你的直觉。</span></span>
+        </button>
+      </div>
+      <p class="lp-group-t">暗影方 · SHADOW</p>
+      <div class="lp-cast-grid">
+        <button type="button" class="lp-cast-card bad" onclick="avalonZoom('cards/c04.jpg','刺客 · ASSASSIN')">
+          <span class="lp-cast-art"><img src="cards/c04.jpg" alt="刺客"></span>
+          <span class="lp-cast-info"><span class="lp-cast-name"><i></i>刺客</span><span class="lp-cast-en">ASSASSIN</span><span class="lp-cast-desc">好人三胜后指认梅林，指中则坏人翻盘。</span></span>
+        </button>
+        <button type="button" class="lp-cast-card bad" onclick="avalonZoom('cards/c05.jpg','莫甘娜 · MORGANA')">
+          <span class="lp-cast-art"><img src="cards/c05.jpg" alt="莫甘娜"></span>
+          <span class="lp-cast-info"><span class="lp-cast-name"><i></i>莫甘娜</span><span class="lp-cast-en">MORGANA</span><span class="lp-cast-desc">派西维尔会把你也当成梅林。</span></span>
+        </button>
+        <button type="button" class="lp-cast-card bad" onclick="avalonZoom('cards/c06.jpg','莫德雷德 · MORDRED')">
+          <span class="lp-cast-art"><img src="cards/c06.jpg" alt="莫德雷德"></span>
+          <span class="lp-cast-info"><span class="lp-cast-name"><i></i>莫德雷德</span><span class="lp-cast-en">MORDRED</span><span class="lp-cast-desc">梅林看不到你，可以放心行动。</span></span>
+        </button>
+        <button type="button" class="lp-cast-card bad" onclick="avalonZoom('cards/c07.jpg','奥伯伦 · OBERON')">
+          <span class="lp-cast-art"><img src="cards/c07.jpg" alt="奥伯伦"></span>
+          <span class="lp-cast-info"><span class="lp-cast-name"><i></i>奥伯伦</span><span class="lp-cast-en">OBERON</span><span class="lp-cast-desc">你不认识其他坏人，其他人也看不到你。</span></span>
+        </button>
+        <button type="button" class="lp-cast-card bad" onclick="avalonZoom('cards/c08.jpg','爪牙 · MINION')">
+          <span class="lp-cast-art"><img src="cards/c08.jpg" alt="爪牙"></span>
+          <span class="lp-cast-info"><span class="lp-cast-name"><i></i>爪牙</span><span class="lp-cast-en">MINION</span><span class="lp-cast-desc">彼此认识，破坏任务、保护刺客。</span></span>
+        </button>
+      </div>
+      <button class="lp-btn primary lp-modal-cta" onclick="enterApp()"><span class="lp-btn-label">开始一局</span> <span aria-hidden="true">→</span></button>
+    </section>
+  </div>
+</div>
+
+<!-- 立绘放大查看：点空白处 / × / Esc 均可关闭 -->
+<div class="lp-zoom" id="lpZoom" role="dialog" aria-label="角色立绘大图" onclick="avalonCloseZoom()">
+  <div class="lp-zoom-mask"></div>
+  <button class="lp-modal-x" onclick="avalonCloseZoom()" aria-label="关闭">×</button>
+  <figure onclick="event.stopPropagation()">
+    <img id="lpZoomImg" src="" alt="">
+    <figcaption id="lpZoomCap"></figcaption>
+  </figure>
+</div>
+
+<!-- 经典 script（非 module）：共享全局作用域，内联 onclick 可正常调用，file:// 双击可运行；顺序不可调换 -->
+<!-- 内置中文口令音频包：纯数据，必须最先加载 -->
+<script src="js/00-audio.js?v=15"></script>
+<script src="js/01-core.js?v=15"></script>
+<script src="js/02-setup.js?v=15"></script>
+<script src="js/03-game.js?v=15"></script>
+<script src="js/04-ui.js?v=15"></script>
+<script src="js/05-boot.js?v=15"></script>
+</body>
+</html>

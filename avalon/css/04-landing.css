@@ -1,0 +1,367 @@
+/* =====================================================================
+ * LANDING · 首屏门面（单屏 / 零外链 / 零背景图片 / 不侵入 #app）
+ * 构图参考：胶囊导航 · 左侧巨型衬线标题 · 右侧三张层叠悬浮卡牌 · 底部脚注
+ * 主题转译：塔罗星宇 → 阿瓦隆星月手抄本；三张牌为 莫甘娜 / 梅林 / 刺客
+ *
+ * 设计要点：
+ * 1) 默认隐藏，只有 html.show-landing 才显示 → 脚本异常时应用照常可用（渐进增强）。
+ * 2) 立绘沿用 cards/ 原图，aspect-ratio + contain 完整显示，绝不裁切。
+ * 3) 常驻动效只有三张牌极缓的上下浮动；尊重 prefers-reduced-motion。
+ * 4) 所有发光/外扩都限制在 overflow:hidden 的容器内，不撑出横向滚动。
+ * ===================================================================== */
+:root {
+  --lp-serif: "Didot", "Bodoni MT", "Playfair Display", "Times New Roman", Georgia, "Songti SC", serif;
+  --lp-sans: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+  --lp-gold: #d8b877;
+  --lp-ink: #f5efe2;
+  --lp-dim: rgba(240, 230, 208, .62);
+}
+
+html.show-landing, html.show-landing body { height: 100%; overflow: hidden; }
+html.show-landing #app { display: none; }
+
+#landing { display: none; }
+html.show-landing #landing { display: block; }
+
+#landing {
+  position: fixed; inset: 0; z-index: 50;
+  overflow: hidden;
+  color: var(--lp-ink);
+  font-family: var(--lp-sans);
+  background:
+    radial-gradient(ellipse 64% 58% at 50% 34%, rgba(102, 76, 148, .26), transparent 72%),
+    radial-gradient(ellipse 90% 62% at 50% -14%, rgba(132, 96, 172, .20), transparent 72%),
+    radial-gradient(ellipse 62% 48% at 84% 96%, rgba(72, 58, 126, .22), transparent 74%),
+    linear-gradient(180deg, #0b0912 0%, #100c1a 46%, #08070d 100%);
+}
+
+/* ---------- 背景：巨大星月行星 ---------- */
+.lp-planet {
+  --planet: min(1200px, 128vw);
+  position: absolute; left: 50%; top: calc(var(--planet) * -0.60);
+  width: var(--planet); height: var(--planet);
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse 30% 22% at 33% 63%, rgba(14, 10, 26, .52), transparent 72%),
+    radial-gradient(ellipse 24% 18% at 64% 41%, rgba(14, 10, 26, .44), transparent 72%),
+    radial-gradient(ellipse 18% 14% at 49% 79%, rgba(14, 10, 26, .38), transparent 72%),
+    radial-gradient(ellipse 12% 9% at 76% 66%, rgba(14, 10, 26, .34), transparent 72%),
+    radial-gradient(circle at 40% 28%, rgba(186, 164, 220, .19), transparent 48%),
+    radial-gradient(circle at 50% 50%, #2c2343 0%, #221a35 52%, #161023 74%, #0d0a16 100%);
+  box-shadow:
+    inset 0 -70px 130px rgba(6, 4, 12, .78),
+    inset 0 0 0 1px rgba(216, 198, 240, .10),
+    0 0 150px rgba(132, 100, 186, .20);
+  filter: blur(6px);          /* 柔化行星硬边，让星云与夜空自然相融 */
+  opacity: .78;
+  pointer-events: none;
+}
+.lp-stars {
+  position: absolute; inset: 0; pointer-events: none; opacity: .8;
+  background-image:
+    radial-gradient(circle 1.4px at 7% 18%,  rgba(255, 246, 222, .90), transparent 100%),
+    radial-gradient(circle 1px   at 14% 62%, rgba(255, 246, 222, .55), transparent 100%),
+    radial-gradient(circle 1.2px at 21% 9%,  rgba(255, 246, 222, .70), transparent 100%),
+    radial-gradient(circle 1px   at 27% 78%, rgba(255, 246, 222, .50), transparent 100%),
+    radial-gradient(circle 1.6px at 33% 14%, rgba(255, 246, 222, .85), transparent 100%),
+    radial-gradient(circle 1px   at 41% 88%, rgba(255, 246, 222, .45), transparent 100%),
+    radial-gradient(circle 1.2px at 48% 6%,  rgba(255, 246, 222, .65), transparent 100%),
+    radial-gradient(circle 1px   at 56% 82%, rgba(255, 246, 222, .50), transparent 100%),
+    radial-gradient(circle 1.5px at 63% 12%, rgba(255, 246, 222, .80), transparent 100%),
+    radial-gradient(circle 1px   at 69% 70%, rgba(255, 246, 222, .55), transparent 100%),
+    radial-gradient(circle 1.2px at 76% 24%, rgba(255, 246, 222, .70), transparent 100%),
+    radial-gradient(circle 1px   at 82% 8%,  rgba(255, 246, 222, .55), transparent 100%),
+    radial-gradient(circle 1.6px at 88% 46%, rgba(255, 246, 222, .85), transparent 100%),
+    radial-gradient(circle 1px   at 93% 20%, rgba(255, 246, 222, .60), transparent 100%),
+    radial-gradient(circle 1.2px at 95% 76%, rgba(255, 246, 222, .65), transparent 100%),
+    radial-gradient(circle 1px   at 4% 88%,  rgba(255, 246, 222, .50), transparent 100%);
+}
+/* 极淡星盘同心环，呼应卡面星月纹样 */
+.lp-orbit {
+  position: absolute; left: 50%; top: 48%;
+  width: min(720px, 68vw); aspect-ratio: 1; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(216, 184, 119, .045);
+  box-shadow: 0 0 0 88px rgba(216, 184, 119, .012), 0 0 0 176px rgba(216, 184, 119, .007);
+  pointer-events: none;
+}
+.lp-vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 82% 76% at 50% 44%, transparent 34%, rgba(4, 3, 8, .72) 100%);
+}
+
+/* ---------- 顶部胶囊导航 ---------- */
+.lp-nav {
+  position: absolute; z-index: 3; top: 24px; left: 50%;
+  transform: translateX(-50%);
+  width: min(1080px, calc(100% - 48px)); height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px 0 14px;
+  border: 1px solid rgba(240, 230, 208, .16); border-radius: 999px;
+  background: rgba(14, 11, 22, .52);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .045), 0 12px 36px rgba(0, 0, 0, .28);
+}
+.lp-brand { display: flex; align-items: center; gap: 10px; font-size: 11px; letter-spacing: .28em; color: var(--lp-ink); }
+.lp-brand-seal {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--lp-serif); font-size: 14px; letter-spacing: 0;
+  color: #f0dca9;
+  border: 1px solid rgba(216, 184, 119, .62);
+  background: radial-gradient(circle, rgba(216, 184, 119, .22), transparent 72%);
+  box-shadow: inset 0 0 0 2px rgba(10, 8, 16, .7), inset 0 0 0 3px rgba(216, 184, 119, .26);
+}
+.lp-brand em { font-style: normal; font-size: 10px; letter-spacing: .16em; color: rgba(240, 230, 208, .42); }
+.lp-links { display: flex; align-items: center; gap: 4px; }
+.lp-link {
+  border: 0; background: transparent; cursor: pointer;
+  padding: 8px 13px; border-radius: 999px;
+  font-family: var(--lp-sans); font-size: 12px; letter-spacing: .10em;
+  color: rgba(240, 230, 208, .66);
+  transition: color .18s, background .18s;
+}
+.lp-link:hover { color: var(--lp-ink); background: rgba(255, 255, 255, .06); }
+.lp-link.lp-nav-cta { color: var(--lp-gold); }
+.lp-link.lp-nav-cta span { margin-left: 4px; font-size: 12px; }
+
+/* ---------- 主内容 ---------- */
+.lp-main {
+  position: relative; z-index: 2;
+  max-width: 1120px; height: 100%; margin: 0 auto;
+  display: grid; grid-template-columns: 1.06fr .94fr; align-items: center; gap: 16px;
+  padding: 92px 40px 72px;
+}
+.lp-copy { position: relative; z-index: 2; }
+.lp-eyebrow {
+  font-size: 10px; letter-spacing: .42em; text-transform: uppercase;
+  color: rgba(216, 184, 119, .80);
+}
+.lp-title {
+  font-family: var(--lp-serif); font-weight: 400;
+  font-size: clamp(46px, 5vw, 76px); line-height: 1.06;
+  letter-spacing: -.022em; color: var(--lp-ink);
+  text-shadow: 0 4px 44px rgba(0, 0, 0, .56);
+  margin: 20px 0 26px;
+}
+.lp-title span { display: block; white-space: nowrap; }
+.lp-lede { font-size: 14px; letter-spacing: .06em; color: var(--lp-dim); margin-bottom: 32px; }
+.lp-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.lp-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 44px; padding: 0 22px; border-radius: 999px; cursor: pointer;
+  font-family: var(--lp-sans); font-size: 13px; letter-spacing: .08em;
+  color: var(--lp-ink);
+  border: 1px solid rgba(240, 230, 208, .22);
+  background: rgba(255, 255, 255, .045);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  transition: background .18s, border-color .18s, transform .12s, box-shadow .18s;
+}
+.lp-btn:hover { background: rgba(255, 255, 255, .10); border-color: rgba(240, 230, 208, .44); }
+.lp-btn:active { transform: translateY(1px); }
+.lp-btn.primary {
+  border-color: #f0dba9; color: #241a0c; font-weight: 600;
+  background: linear-gradient(160deg, #e8cf9a, #c9a35c);
+  box-shadow: 0 6px 24px rgba(201, 163, 92, .22), inset 0 1px 0 rgba(255, 255, 255, .5);
+}
+.lp-btn.primary:hover { background: linear-gradient(160deg, #f2dcac, #d3ae66); box-shadow: 0 8px 30px rgba(201, 163, 92, .34); }
+.lp-btn span { font-size: 15px; line-height: 1; }
+
+/* ---------- 右侧三张层叠卡牌 ----------
+   左右两张下移并外展，让各自的牌名铭牌完整露出，不被中间牌压住。 */
+.lp-deck { position: relative; height: min(560px, 64vh); }
+.lp-deck::before {
+  content: ''; position: absolute; inset: 4% 2% 8%;
+  background: radial-gradient(ellipse 58% 52% at 50% 48%, rgba(158, 124, 206, .22), transparent 72%);
+  filter: blur(34px); pointer-events: none;
+}
+.lp-card {
+  position: absolute; overflow: hidden;
+  padding: 6px 6px 0; border-radius: 9px;
+  background: linear-gradient(150deg, #3a2c1c, #191320);
+  border: 1px solid rgba(216, 184, 119, .55);
+  box-shadow:
+    0 28px 58px rgba(0, 0, 0, .66),
+    0 0 0 1px rgba(0, 0, 0, .5),
+    inset 0 0 0 3px rgba(216, 184, 119, .14);
+  --r: 0deg;
+  transform: rotate(var(--r));
+  animation: lpFloat 7s ease-in-out infinite;
+}
+.lp-card img {
+  display: block; width: 100%;
+  aspect-ratio: 640 / 750; object-fit: contain;
+  border-radius: 3px 3px 0 0;
+}
+.lp-card figcaption {
+  margin: 0 -6px; padding: 6px 0 7px; text-align: center;
+  background: linear-gradient(180deg, #e8d6ad, #c6a56d);
+  color: #2c2010;
+}
+.lp-card figcaption b {
+  display: block; font-family: var(--lp-serif); font-weight: 400;
+  font-size: 12px; letter-spacing: .28em; line-height: 1.25;
+}
+.lp-card figcaption small {
+  display: block; margin-top: 2px;
+  font-size: 9px; letter-spacing: .22em; opacity: .72;
+}
+.lp-card.c-left  { --r: -13deg; width: min(180px, 17vw); left: 0%;  top: 20%; z-index: 2; animation-delay: -1.4s; }
+.lp-card.c-mid   { --r: -2deg;  width: min(208px, 20vw); left: 32%; top: 2%;  z-index: 4; animation-delay: 0s; }
+.lp-card.c-right { --r: 14deg;  width: min(180px, 17vw); left: 66%; top: 19%; z-index: 1; animation-delay: -3.1s; }
+@keyframes lpFloat {
+  0%, 100% { transform: rotate(var(--r)) translateY(0); }
+  50%      { transform: rotate(var(--r)) translateY(-10px); }
+}
+
+/* ---------- 右下纹章 / 底部脚注 ---------- */
+.lp-sigil {
+  position: absolute; z-index: 2; right: 46px; bottom: 78px;
+  width: 54px; height: 54px; border-radius: 50%;
+  display: grid; place-items: center;
+  color: rgba(216, 184, 119, .72); font-size: 19px;
+  border: 1px solid rgba(216, 184, 119, .34);
+  background: radial-gradient(circle, rgba(216, 184, 119, .10), transparent 72%);
+  box-shadow: inset 0 0 0 4px rgba(10, 8, 16, .6), inset 0 0 0 5px rgba(216, 184, 119, .17);
+  pointer-events: none;
+}
+.lp-foot {
+  position: absolute; z-index: 2; left: 0; right: 0; bottom: 26px;
+  text-align: center; font-size: 9px; letter-spacing: .32em;
+  color: rgba(240, 230, 208, .28);
+  pointer-events: none;
+}
+
+/* ---------- 说明弹层（两个轻量 overlay，不做长页） ---------- */
+.lp-modal { position: fixed; inset: 0; z-index: 80; display: none; align-items: center; justify-content: center; padding: 20px; }
+.lp-modal.open { display: flex; }
+.lp-modal-mask { position: absolute; inset: 0; background: rgba(5, 4, 10, .78); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+/* 关闭按钮放在不滚动的 wrap 上：长内容滚到底后 × 依然可点 */
+.lp-modal-wrap { position: relative; width: min(540px, 100%); }
+#lpRoles .lp-modal-wrap { width: min(780px, 100%); }
+.lp-modal-box {
+  position: relative; width: 100%; max-height: min(84vh, 720px); overflow-y: auto;
+  padding: 30px 28px 28px; border-radius: 14px;
+  color: var(--lp-ink);
+  background: linear-gradient(165deg, #241b2e, #171120 58%, #120e1a);
+  border: 1px solid rgba(216, 184, 119, .34);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .72), inset 0 0 0 4px rgba(216, 184, 119, .05);
+  scrollbar-width: thin; scrollbar-color: rgba(216, 184, 119, .34) transparent;
+}
+.lp-modal-box::-webkit-scrollbar { width: 6px; }
+.lp-modal-box::-webkit-scrollbar-thumb { background: rgba(216, 184, 119, .32); border-radius: 6px; }
+.lp-modal-x {
+  position: absolute; z-index: 3; right: 12px; top: 12px;
+  width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+  border: 1px solid rgba(240, 230, 208, .20); background: rgba(18, 14, 26, .74);
+  color: var(--lp-ink); font-size: 20px; line-height: 1;
+}
+.lp-modal-x:hover { background: rgba(255, 255, 255, .14); }
+.lp-modal-t { font-family: var(--lp-serif); font-weight: 400; font-size: 26px; letter-spacing: .04em; margin: 10px 0 4px; }
+.lp-rules { list-style: none; counter-reset: lp; margin: 20px 0 24px; }
+.lp-rules li {
+  counter-increment: lp; position: relative; padding-left: 34px; margin-bottom: 13px;
+  font-size: 13.5px; line-height: 1.72; color: rgba(240, 230, 208, .80);
+}
+.lp-rules li::before {
+  content: counter(lp, decimal-leading-zero);
+  position: absolute; left: 0; top: 1px;
+  font-family: var(--lp-serif); font-size: 13px; color: rgba(216, 184, 119, .88);
+}
+.lp-group-t { font-size: 10px; letter-spacing: .28em; color: rgba(216, 184, 119, .80); margin: 20px 0 10px; }
+.lp-cast-hint { font-size: 11px; letter-spacing: .06em; color: rgba(240, 230, 208, .44); margin: 6px 0 0; }
+.lp-modal-cta { margin-top: 18px; }
+
+/* ---------- 角色图鉴：八张立绘卡（沿用 cards/ 原图，完整等比显示） ---------- */
+.lp-cast-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.lp-cast-card {
+  display: block; width: 100%; margin: 0; padding: 0 0 11px;
+  text-align: left; cursor: pointer; overflow: hidden;
+  font-family: var(--lp-sans); color: var(--lp-ink);
+  border: 1px solid rgba(240, 230, 208, .14); border-radius: 9px;
+  background: linear-gradient(170deg, rgba(58, 44, 28, .56), rgba(20, 16, 28, .88));
+  transition: transform .18s, border-color .18s, box-shadow .18s;
+}
+.lp-cast-card.good { box-shadow: inset 0 2px 0 rgba(127, 168, 208, .58); }
+.lp-cast-card.bad  { box-shadow: inset 0 2px 0 rgba(196, 112, 92, .66); }
+.lp-cast-card:hover { transform: translateY(-3px); border-color: rgba(216, 184, 119, .62); }
+.lp-cast-card.good:hover { box-shadow: inset 0 2px 0 rgba(127, 168, 208, .58), 0 12px 26px rgba(0, 0, 0, .5); }
+.lp-cast-card.bad:hover  { box-shadow: inset 0 2px 0 rgba(196, 112, 92, .66), 0 12px 26px rgba(0, 0, 0, .5); }
+.lp-cast-card:focus-visible { outline: 2px solid var(--lp-gold); outline-offset: 2px; }
+.lp-cast-art {
+  display: block; width: 100%; aspect-ratio: 640 / 750;
+  background: radial-gradient(ellipse at 50% 30%, rgba(216, 184, 119, .14), rgba(8, 6, 14, .72) 76%);
+  border-bottom: 1px solid rgba(216, 184, 119, .22);
+}
+.lp-cast-art img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.lp-cast-info { display: block; padding: 9px 10px 0; }
+.lp-cast-name { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; letter-spacing: .04em; }
+.lp-cast-name i { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex: none; }
+.lp-cast-card.good .lp-cast-name i { background: #7fa8d0; }
+.lp-cast-card.bad  .lp-cast-name i { background: #c4705c; }
+.lp-cast-en { display: block; margin-top: 2px; font-family: var(--lp-serif); font-size: 9.5px; letter-spacing: .22em; color: rgba(216, 184, 119, .80); }
+.lp-cast-desc { display: block; margin-top: 6px; font-size: 10.5px; line-height: 1.55; color: rgba(240, 230, 208, .60); }
+
+/* ---------- 立绘放大查看 ---------- */
+.lp-zoom { position: fixed; inset: 0; z-index: 110; display: none; align-items: center; justify-content: center; padding: 24px; }
+.lp-zoom.open { display: flex; }
+.lp-zoom-mask { position: absolute; inset: 0; background: rgba(4, 3, 8, .90); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.lp-zoom > .lp-modal-x { right: 20px; top: 20px; }
+.lp-zoom figure {
+  position: relative; z-index: 1; margin: 0;
+  display: flex; flex-direction: column; align-items: center;
+  max-width: min(440px, 88vw);
+}
+.lp-zoom img {
+  display: block; width: auto; height: auto;
+  max-width: 100%; max-height: calc(84vh - 46px); object-fit: contain;
+  border-radius: 8px; border: 1px solid rgba(216, 184, 119, .50);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .80);
+}
+.lp-zoom figcaption { margin-top: 12px; font-family: var(--lp-serif); font-size: 13px; letter-spacing: .20em; color: #e8cf9a; }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 980px) {
+  .lp-main { grid-template-columns: 1.1fr .9fr; padding: 88px 28px 68px; }
+  .lp-title { font-size: clamp(42px, 5.2vw, 62px); }
+  .lp-card.c-mid { width: min(180px, 23vw); }
+  .lp-card.c-left, .lp-card.c-right { width: min(154px, 19vw); }
+}
+@media (max-width: 820px) {
+  .lp-nav { top: 12px; width: calc(100% - 24px); height: 46px; padding: 0 12px 0 10px; }
+  .lp-brand { gap: 8px; font-size: 10px; letter-spacing: .18em; }
+  .lp-brand em { display: none; }
+  .lp-links .lp-link:not(.lp-nav-cta) { display: none; }
+  .lp-link.lp-nav-cta { padding: 8px 10px; font-size: 11px; }
+  .lp-main { display: block; height: 100%; padding: 104px 26px 76px; }
+  .lp-title { font-size: clamp(42px, 12.5vw, 72px); margin: 16px 0 20px; }
+  .lp-lede { font-size: 13px; max-width: 310px; margin-bottom: 26px; }
+  .lp-btn { height: 42px; padding: 0 17px; font-size: 12px; }
+  .lp-actions { gap: 9px; }
+  .lp-deck {
+    position: absolute; right: -20px; bottom: 46px;
+    width: 330px; height: 330px; z-index: 0; opacity: .52; pointer-events: none;
+  }
+  .lp-card.c-mid   { width: 150px; left: 31%; top: 1%; }
+  .lp-card.c-left  { width: 126px; left: 3%;  top: 17%; }
+  .lp-card.c-right { width: 126px; left: 63%; top: 15%; }
+  .lp-sigil { display: none; }
+  .lp-foot { bottom: 14px; padding: 0 20px; font-size: 8px; letter-spacing: .16em; line-height: 1.7; }
+  .lp-cast-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .lp-cast-name { font-size: 12.5px; }
+  .lp-cast-desc { font-size: 10.5px; }
+  .lp-modal-wrap, #lpRoles .lp-modal-wrap { width: 100%; }
+  .lp-modal-box { padding: 26px 18px 22px; max-height: 86vh; }
+  .lp-zoom img { max-height: calc(80vh - 46px); }
+}
+@media (max-width: 820px) and (max-height: 680px) {
+  .lp-main { padding-top: 84px; }
+  .lp-title { font-size: clamp(38px, 10.5vw, 56px); margin: 12px 0 16px; }
+  .lp-lede { margin-bottom: 18px; }
+  .lp-deck { opacity: .36; bottom: 30px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-card { animation: none; }
+  .lp-btn, .lp-link, .lp-cast-card { transition: none; }
+}

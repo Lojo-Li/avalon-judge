@@ -1,0 +1,133 @@
+/* ============================================================
+   微动效层 · 纯 CSS / 零依赖 / 零外部代码
+   借鉴 motionin.design 的工程原则：动效只做离散节拍、时长克制、
+   尊重 prefers-reduced-motion；不引入常驻 rAF / WebGL / GSAP。
+   动效按本项目节拍编排；鎏金流转边的角度插值思路参考 Magic Card（Mythrill），
+   配色、周期与降级策略均按中世纪手抄本主题重写。
+   ============================================================ */
+
+/* 1) 统一按压反馈：每次点击都有即时可见回应，降低误触 */
+.btn, .member, .pick, .pbtn, .count-pill, .stepper button, .abort button {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .13s cubic-bezier(.2,.8,.3,1), filter .13s ease,
+              border-color .16s ease, background-color .16s ease, box-shadow .16s ease;
+}
+.btn:active, .member:active, .pick:active, .pbtn:active,
+.count-pill:active, .stepper button:active { transform: scale(.965); }
+
+/* 2) 键盘可达：焦点清晰可见，鼠标点击不受影响 */
+.btn:focus-visible, .member:focus-visible, .pick:focus-visible,
+.pbtn:focus-visible, .count-pill:focus-visible, .stepper button:focus-visible,
+.abort button:focus-visible, .name-row input:focus-visible {
+  outline: 2px solid var(--gold); outline-offset: 2px;
+}
+
+/* 3) 身份卡翻牌：只在「点开看身份」时出现，背面朝上 → 翻开 */
+@keyframes cardDeal {
+  /* 立绘卡更高，起始角度收敛，避免翻牌途中透视把卡面文字挤成窄条 */
+  from { opacity: 0; transform: perspective(760px) rotateY(-28deg) translateY(10px) scale(.97); }
+  to   { opacity: 1; transform: perspective(760px) rotateY(0) translateY(0) scale(1); }
+}
+.rolecard { animation: cardDeal .4s cubic-bezier(.2,.8,.25,1) both; transform-origin: 50% 25%; }
+/* 3b) 立绘稍后淡入：避免图片解码晚于翻牌，先露出一块空白卡面 */
+@keyframes artIn { from { opacity: 0; } to { opacity: 1; } }
+.rolecard .art img { animation: artIn .26s .1s ease-out both; }
+
+/* 4) 阵营徽章一次性光泽扫过（specular sheen 轻量版，只播一次） */
+.rolecard .team-badge { position: relative; overflow: hidden; }
+.rolecard .team-badge::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 32%, rgba(255,228,164,.55) 50%, transparent 68%);
+  transform: translateX(-120%);
+  animation: badgeSheen 1s .3s ease-out 1 both;
+}
+@keyframes badgeSheen { to { transform: translateX(120%); } }
+
+/* 5) 结果 / 二次确认弹入：强化「亮票」「揭晓」「确认」时刻 */
+@keyframes resultPop {
+  0%   { opacity: 0; transform: scale(.84) translateY(8px); }
+  70%  { opacity: 1; transform: scale(1.04) translateY(0); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.vote-result { animation: resultPop .32s cubic-bezier(.2,.9,.3,1) both; }
+
+/* 6) 睁眼脚本广播大字：每推进一步淡入一次，增加仪式感 */
+@keyframes softIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+#app[data-screen="EYES"] .bigtext { animation: softIn .3s ease-out both; }
+
+/* 7) 结局 / 刺杀页卡片淡入（这些页面重绘少，不会闪烁） */
+#app[data-screen="GAME_OVER"] .card,
+#app[data-screen="ASSASSINATE"] .card { animation: softIn .34s ease-out both; }
+#app[data-screen="GAME_OVER"] .card:nth-of-type(2),
+#app[data-screen="ASSASSINATE"] .card:nth-of-type(2) { animation-delay: .08s; }
+
+/* 8) 当前任务格：极轻呼吸光晕，指明进度而不干扰阅读 */
+@keyframes curBreath {
+  0%, 100% { box-shadow: 0 0 10px rgba(217,180,74,.2); }
+  50%      { box-shadow: 0 0 18px rgba(217,180,74,.45); }
+}
+.qcell .qdot.cur { animation: curBreath 2.8s ease-in-out infinite; }
+
+/* 9) 浮层提示淡入 */
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+.toast { animation: toastIn .22s ease-out both; }
+
+/* 10) 硬规则：任务秘密投票阶段保持绝对静止，不产生随投票进度变化的视觉信号 */
+#app[data-screen="QUEST"] .bigtext,
+#app[data-screen="QUEST"] .step-ind,
+#app[data-screen="QUEST"] .qcell .qdot.cur { animation: none; }
+
+/* 11) 身份揭晓卡：整张卡面的鎏金流光 + 内缘柔光（A 方案 / 提亮版）
+   只在「查看身份」这一态出现。DEAL 页的递牌 / 交接两态用的是 .card.gold，
+   故以 #app[data-screen="DEAL"] .rolecard 精准命中，无需改动任何 JS。
+   .rolecard 是 8 个角色共用的模板，因此所有身份卡统一生效，不按角色区分。
+   角度插值思路参考 Magic Card 的 @property 用法；配色为暗铜 / 烫金 / 浅金 / 火漆红，
+   周期 6s。光铺满整张卡片表面（羊皮纸底色层 + 立绘柔光），不做外扩描边。
+   亮度按 A/B 对照稿中确认的 A 版上调一档；soft-light 保证人物细节与文字仍清晰。
+   var() 带静态兜底：不支持 @property 的浏览器仍保留固定角度的一层暖光。 */
+@property --gild-rotate {
+  syntax: "<angle>";
+  initial-value: 132deg;
+  inherits: false;
+}
+@keyframes gildSpin {
+  from { --gild-rotate: 0deg; }
+  to   { --gild-rotate: 360deg; }
+}
+#app[data-screen="DEAL"] .rolecard {
+  /* 最上层叠一道缓缓转动的暖金光带；下两层照抄原羊皮纸纹理，保持纸感 */
+  background-image:
+    linear-gradient(var(--gild-rotate, 132deg),
+      rgba(201,165,78,0) 0%, rgba(255,236,180,.54) 24%, rgba(201,165,78,.16) 46%,
+      rgba(176,74,48,.26) 70%, rgba(201,165,78,0) 100%),
+    radial-gradient(circle at 22% 12%, rgba(160,120,50,.11), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(120,90,40,.035) 0 1px, transparent 1px 4px);
+  /* 从卡片内缘往里散的柔光：光留在卡片上，不跑到卡片外面 */
+  box-shadow: inset 0 0 0 5px var(--paper), inset 0 0 0 6px rgba(169,138,78,.55),
+              inset 0 0 40px rgba(201,165,78,.30), 0 10px 24px rgba(0,0,0,.4);
+  animation: cardDeal .4s cubic-bezier(.2,.8,.25,1) both,
+             gildSpin 6s linear infinite;
+}
+/* 立绘表面同样吃光：暖金光斑随角度缓缓移过卡面，让整张卡都有光。
+   soft-light 只提亮不覆盖，人物细节与文字保持清晰；inset 4px 避开内金线。 */
+#app[data-screen="DEAL"] .rolecard .art::after {
+  content: ''; position: absolute; inset: 4px; pointer-events: none;
+  background: linear-gradient(var(--gild-rotate, 132deg),
+    rgba(201,165,78,0) 0%, rgba(255,236,180,.70) 26%, rgba(201,165,78,.14) 50%,
+    rgba(190,80,50,.38) 72%, rgba(201,165,78,0) 100%);
+  mix-blend-mode: soft-light;
+  animation: gildSpin 6s linear infinite;
+}
+
+/* 12) 系统开启「减少动态效果」时，一键降级为静态 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

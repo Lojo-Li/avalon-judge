@@ -1,0 +1,88 @@
+/* ============================================================
+   中世纪手抄本主题 · VELLUM
+   纯 CSS / 系统字体 / 零外链 / 零运行时依赖；身份卡立绘为 cards/ 下的本地图片。
+   深胡桃木底 + 羊皮纸身份卡 + 烫金双线框 + 衬线标题 + 火漆红印章。
+   注意：本段只定义视觉表现；所有 class 名、布局、尺寸、状态语义
+   与原版完全一致，规则判定与 DOM 结构不受影响。
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --good: #5b86ae;          /* 好人 · 靛蓝 */
+  --good-dark: #33577a;
+  --bad: #b2493a;           /* 坏人 · 火漆红 */
+  --bad-dark: #7a2b22;
+  --gold: #c9a54e;          /* 烫金 */
+  --gold-dim: #9d834f;
+  --good-lit: #8fb8dc;      /* 深底上的亮靛蓝（大字 / 结果） */
+  --bad-lit: #e0917a;       /* 深底上的亮火漆红 */
+  --bg: #17110a;
+  --card: #261c11;
+  --card2: #332617;
+  --text: #ecdfc4;
+  --text-dim: #ac9872;
+  --line: #5c4626;
+  --paper: #eee0c2;         /* 羊皮纸 */
+  --paper-ink: #3a2c1c;
+  --serif: "Songti SC", "STSong", "SimSun", Georgia, "Times New Roman", serif;
+  --sans: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  --wood: linear-gradient(168deg, #2c2013, #1f170d);
+}
+html, body { height: 100%; }
+body {
+  background-color: var(--bg);
+  /* 烛光 + 木纹颗粒，全部由渐变生成，不请求任何图片 */
+  background-image:
+    radial-gradient(ellipse at 50% -8%, rgba(201,165,78,.13), transparent 62%),
+    radial-gradient(ellipse at 50% 112%, rgba(0,0,0,.45), transparent 62%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.055) 0 1px, transparent 1px 3px);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+}
+#app { max-width: 520px; margin: 0 auto; padding: 16px 14px 40px; }
+
+h1.title { text-align: center; font-family: var(--serif); font-weight: 500;
+  font-size: 27px; color: var(--gold); letter-spacing: .3em; margin: 10px 0 4px;
+  text-shadow: 0 1px 0 rgba(0,0,0,.65); }
+.subtitle { text-align: center; color: var(--text-dim); font-size: 13px;
+  letter-spacing: .12em; margin-bottom: 20px; padding-bottom: 14px;
+  border-bottom: 1px solid rgba(157,131,79,.35); }
+
+/* 卡片：木框 + 烫金双内线，直角小圆角（去掉现代渐变圆角卡片感） */
+.card { background: var(--wood); border: 1px solid var(--line); border-radius: 3px;
+  padding: 18px 16px; margin-bottom: 14px;
+  box-shadow: inset 0 0 0 4px rgba(201,165,78,.05),
+              inset 0 0 0 5px rgba(201,165,78,.22),
+              0 8px 22px rgba(0,0,0,.38); }
+.card.gold { border-color: var(--gold-dim); }
+.sec-title { font-family: var(--serif); font-size: 14px; color: var(--gold);
+  margin-bottom: 10px; letter-spacing: .16em; padding-bottom: 8px;
+  border-bottom: 1px solid rgba(157,131,79,.28); }
+
+.bigtext { font-family: var(--serif); font-size: 30px; font-weight: 600;
+  text-align: center; padding: 22px 8px; letter-spacing: .1em; }
+.bigtext.good { color: var(--good-lit); }
+.bigtext.bad { color: var(--bad-lit); }
+.bigtext.gold { color: var(--gold); }
+
+/* 按钮：移动端大点击区域；火漆红 / 靛蓝 / 烫金三色语义不变 */
+.btn {
+  display: block; width: 100%; min-height: 56px; margin: 10px 0 0;
+  border: 1px solid var(--gold-dim); border-radius: 3px;
+  font-family: var(--serif); font-size: 19px; font-weight: 600;
+  color: var(--text); background: linear-gradient(180deg, #3b2b18, #2a1d10);
+  cursor: pointer; letter-spacing: .16em;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 3px 0 rgba(0,0,0,.35);
+  transition: filter .12s, transform .06s;
+}
+.btn:active { transform: scale(.98); filter: brightness(1.15); }
+.btn.good { background: linear-gradient(180deg, #3d6285, #294664); border-color: #6f93b4; color: #f2ead8; }
+.btn.bad { background: linear-gradient(180deg, #8d3026, #67221b); border-color: #b4715c; color: #f5e6cc; }
+.btn.gold { background: linear-gradient(180deg, #d4b15c, #a9842f); border-color: #e2c477;
+  color: #241804; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 3px 0 rgba(0,0,0,.35); }
+.btn.ghost { background: transparent; border: 1px solid var(--line); color: var(--text-dim);
+  font-size: 15px; min-height: 44px; box-shadow: none; }
+.btn.small { min-height: 44px; font-size: 15px; letter-spacing: .1em; }
+.btn + .btn { margin-top: 10px; }
+
